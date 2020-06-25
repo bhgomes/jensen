@@ -1,5 +1,3 @@
 # jensen
 
-_a [`lean`](https://github.com/lean-prover/lean) implementation of Jensen's Inequality_
-
-
+_a [`Lean`](https://github.com/leanprover) implementation of Jensen's Inequality_
