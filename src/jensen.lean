@@ -61,8 +61,8 @@ We will be using the `Power` construction many times throughout since partial fu
 play an important role in the `jensen_inequality` and also in the theory of integration in
 general; partial functions only make sense if we have defined the notion of power set.
 -/
-definition {𝒰i 𝒰j} Power (X : Type 𝒰i)
-    := X → Type 𝒰j
+definition Power (X : Type*)
+    := X → Type*
 notation `𝒫` X := Power X
 
 /--
@@ -74,13 +74,12 @@ takes every point of `X` to the basepoint `b`.
 Such functions are important for the `jensen_inequality`, and are also important in the
 study of pointed spaces in general.
 -/
-definition {𝒰x 𝒰y} const {X : Type 𝒰x} {Y : Type 𝒰y}
+definition const {X : Type*} {Y : Type*}
     := λ b:Y, (λ x:X, b)
 notation `↓`:max y:max := const y
 
 section difference_domain --—————————————————————————————————————————————————————————————--
-universes 𝒰y
-variables (Y : Type 𝒰y)
+variables (Y : Type*)
 
 /--
 `DifferenceDomain Y extends has_zero Y, has_sub Y` A good place to do subtraction.
@@ -113,8 +112,7 @@ class OrderedDifferenceDomain
 end difference_domain --—————————————————————————————————————————————————————————————————--
 
 section reduction --—————————————————————————————————————————————————————————————————————--
-universes 𝒰y 𝒰x
-variables {Y : Type 𝒰y} {X : Type 𝒰x} (𝓕 : 𝒫 (X → Y))
+variables {Y : Type*} {X : Type*} (𝓕 : 𝒫 (X → Y))
 
 /--
 `Reduction` A generalized functional.
@@ -288,8 +286,7 @@ end subtraction --————————————————————�
 end reduction --—————————————————————————————————————————————————————————————————————————--
 
 section subdifferential --———————————————————————————————————————————————————————————————--
-universes 𝒰y
-variables {Y : Type 𝒰y} [has_zero Y] [has_sub Y] [has_le Y]
+variables {Y : Type*} [has_zero Y] [has_sub Y] [has_le Y]
           (φ : Y → Y) (t : Y) (𝒩 : 𝒫 Y)
 
 /--
@@ -319,8 +316,7 @@ structure SubDifferential
        (lower_bound_property : Π s, 𝒩 s → map (s - t) ≤ (φ s) - (φ t))
 
 --———————————————————————————————————————————————————————————————————————————————————————--
-universes 𝒰x
-variables {X : Type 𝒰x} (𝓕 : 𝒫 (X → Y)) (Int : Reduction 𝓕)
+variables {X : Type*} (𝓕 : 𝒫 (X → Y)) (Int : Reduction 𝓕)
 
 /--
 `LeftFactorSubDifferential φ t 𝒩` A left factorizable subdifferential.
@@ -335,9 +331,8 @@ structure LeftFactorSubDifferential extends SubDifferential φ t 𝒩
 end subdifferential --———————————————————————————————————————————————————————————————————--
 
 section jensen_inequality --—————————————————————————————————————————————————————————————--
-universes 𝒰y 𝒰x
-variables {Y : Type 𝒰y} [OrderedDifferenceDomain Y]
-          {X : Type 𝒰x}
+variables {Y : Type*} [OrderedDifferenceDomain Y]
+          {X : Type*}
           (𝓕 : 𝒫 (X → Y)) [PointFamily 𝓕] [DifferenceFamily 𝓕]
           (Int : Reduction 𝓕)
 
