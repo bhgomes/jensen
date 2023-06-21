@@ -45,7 +45,7 @@ In general `𝒫 X` behaves like the classical power set of `X`, i.e. a complete
   - Union:                  `P ∪ Q := λ x, P x ∨ Q x`
   - Intersection:           `P ∩ Q := λ x, P x ∧ Q x`
   - Aribtrary Union:        `⋃ 𝓕 := λ x, Σ i, (𝓕 i) x`
-  - Aribtrary Intersection: `⋂ 𝓕 := λ x, Π i, (𝓕 i) x`
+  - Aribtrary Intersection: `⋂ 𝓕 := λ x, forall i, (𝓕 i) x`
 
 where `𝟘` and `𝟙` are the empty type (the type with no terms) and unit type (the type with
 one canonical term) respectively. The `⊥` element can be called the "empty set" and the
@@ -61,9 +61,8 @@ We will be using the `Power` construction many times throughout since partial fu
 play an important role in the `jensen_inequality` and also in the theory of integration in
 general; partial functions only make sense if we have defined the notion of power set.
 -/
-definition Power (X : Type*)
-    := X → Type*
-notation `𝒫` X := Power X
+def Power (X : Type _)
+  := X -> Type _
 
 /--
 `const b` (`↓b`) The constant function at a point.
@@ -74,15 +73,19 @@ takes every point of `X` to the basepoint `b`.
 Such functions are important for the `jensen_inequality`, and are also important in the
 study of pointed spaces in general.
 -/
-definition const {X : Type*} {Y : Type*}
-    := λ b:Y, (λ x:X, b)
-notation `↓`:max y:max := const y
-
-section difference_domain --—————————————————————————————————————————————————————————————--
-variables (Y : Type*)
+def const {X : Type _} {Y : Type _}
+    := fun b:Y => fun _:X => b
 
 /--
-`DifferenceDomain Y extends has_zero Y, has_sub Y` A good place to do subtraction.
+-/
+class Zero (X : Type _)
+    := (zero : X)
+
+section difference_domain --—————————————————————————————————————————————————————————————--
+variable (Y : Type _)
+
+/--
+`DifferenceDomain Y extends Zero Y, Sub Y` A good place to do subtraction.
 
 A `DifferenceDomain` is a minimal structure that admits a version of subtraction like the
 one we are familiar with from the theory of abelian groups. The main property that
@@ -90,29 +93,28 @@ distingushes subtraction is that image of the diagonal always vanishes. This pro
 called `vanishing_diagonal` below.
 
 There are other axioms which would make sense to add like the following two:
-  - `zero_is_right_id  : Π y, y - 0 = y`
-  - `sub_associativity : Π a b c, a - (b - c) = (a - b) - (0 - c)`
+  - `zero_is_right_id  : forall y, y - 0 = y`
+  - `sub_associativity : forall a b c, a - (b - c) = (a - b) - (0 - c)`
 
 which makes the subtraction more like the inverse of some addition operation like
 `a + b := a - (0 - b)`, but such details are not considered here. For the
 `jensen_inequality`, we need only the `vanishing_diagonal` property.
 -/
-class DifferenceDomain extends has_zero Y, has_sub Y
-    := (vanishing_diagonal : Π y, y - y = zero)
+class DifferenceDomain extends Zero Y, Sub Y
+    := (vanishing_diagonal : forall y, y - y = zero)
 
 /--
-`OrderedDifferenceDomain Y extends has_le Y, DifferenceDomain Y`
+`OrderedDifferenceDomain Y extends LE Y, DifferenceDomain Y`
 
 We will need an order structure on `Y` to state and prove the `jensen_inequality` so we
 add it here. There are no asumptions on the behavior of `≤` like reflexivity/transitivity.
 -/
-class OrderedDifferenceDomain
-    extends has_le Y, DifferenceDomain Y
+class OrderedDifferenceDomain extends LE Y, DifferenceDomain Y
 
 end difference_domain --—————————————————————————————————————————————————————————————————--
 
 section reduction --—————————————————————————————————————————————————————————————————————--
-variables {Y : Type*} {X : Type*} (𝓕 : 𝒫 (X → Y))
+variable {Y : Type _} {X : Type _} (𝓕 : Power (X → Y))
 
 /--
 `Reduction` A generalized functional.
@@ -139,8 +141,8 @@ corresponding to that reduction, i.e. `reducible f := 𝓕 f`. We say that a red
 *admits (a reduction of) a function `f`* if `f` is reducible with respect to the family
 corresponding to the given reduction.
 -/
-definition Reduction
-    := Π f, 𝓕 f → Y
+def Reduction
+    := forall f, 𝓕 f → Y
 
 /--
 `left_closed_at 𝓕 f g` Left closedness of `g` at `f`.
@@ -149,7 +151,7 @@ We say that a function `g : Y → Y` is *left closed at `f` with respect to `�
 reducibility of `f` implies the reducibility of the composition `g ∘ f` with respect to
 the fixed family `𝓕`.
 -/
-definition left_closed_at (f : X → Y) (g : Y → Y)
+def left_closed_at f g
     := 𝓕 f → 𝓕 (g ∘ f)
 
 /--
@@ -158,8 +160,8 @@ definition left_closed_at (f : X → Y) (g : Y → Y)
 We say that a function `g : Y → Y` is *left closed with respect to `𝓕`* when it is left
 closed at every function `f : X → Y`.
 -/
-definition left_closed (g : Y → Y)
-    := Π f, left_closed_at 𝓕 f g
+def left_closed g
+    := forall f, left_closed_at 𝓕 f g
 
 /--
 `PointFamily` Family of functions which contains all constant functions.
@@ -168,7 +170,7 @@ A reasonable reduction family might admit constant functions as a trivial case o
 more interesting property.
 -/
 class PointFamily
-    := (has_constants : Π y, 𝓕 ↓y)
+    := (has_constants : forall y, 𝓕 (const y))
 
 section subtraction --———————————————————————————————————————————————————————————————————--
 
@@ -178,21 +180,21 @@ section subtraction --———————————————————�
 If `Y` has a subtraction structure then for any type `X`, the function space `X → Y` has a
 canonical pointwise subtraction. This `instance` is added to simplify the notation below.
 -/
-instance pointwise_subtraction [has_sub Y] : has_sub (X → Y)
-    := ⟨λ f g, (λ x, f x - g x)⟩
+instance pointwise_subtraction [Sub Y] : Sub (X -> Y)
+    := ⟨fun f g => (fun x => f x - g x)⟩
 
 /--
 `DifferenceFamily` Family of functions closed under pointwise subtraction.
 -/
-class DifferenceFamily [has_sub Y]
-    := (closure : Π f g (f𝓕 : 𝓕 f) (g𝓕 : 𝓕 g), 𝓕 (f - g))
+class DifferenceFamily [Sub Y]
+    := (closure : forall f g (_ : 𝓕 f) (_ : 𝓕 g), 𝓕 (f - g))
 
 --———————————————————————————————————————————————————————————————————————————————————————--
-/--
+/-
 We fix `Int : Reduction 𝓕` which will be written symbolically `∫` to conote something like
 an integral. This reduction will be used below.
 -/
-variables (Int : Reduction 𝓕)
+variable (Int : Reduction 𝓕)
 
 /--
 `left_factors 𝓕 β lc_β` Left factorizability of `β`.
@@ -200,12 +202,12 @@ variables (Int : Reduction 𝓕)
 We say that a left closed function `β` *left factors with respect to `Int`* when for every
 reducible `f` we have the identity `∫ (β ∘ f) = β (∫ f)`.
 -/
-definition left_factors (β : Y → Y) (lc_β : left_closed 𝓕 β)
-    := Π f (f𝓕 : 𝓕 f), Int (β ∘ f) (lc_β f f𝓕) = β (Int f f𝓕)
+def left_factors (β : Y → Y) (lc_β : left_closed 𝓕 β)
+    := forall f (f𝓕 : 𝓕 f), Int (β ∘ f) (lc_β f f𝓕) = β (Int f f𝓕)
 
 --———————————————————————————————————————————————————————————————————————————————————————--
-/-- For the rest of this section we assume `𝓕` is a `PointFamily`. -/
-variables [PointFamily 𝓕]
+/- For the rest of this section we assume `𝓕` is a `PointFamily`. -/
+variable [PointFamily 𝓕]
 
 /--
 `UnitalReduction` A reduction which is friendly to constant functions.
@@ -214,11 +216,11 @@ We say that a reduction is unital if it admits all constant functions and that t
 reduction of a constant function is the constant which defines it, i.e. `∫ ↓y = y`.
 -/
 class UnitalReduction
-    := (constant_reduction : Π y, Int ↓y (PointFamily.has_constants 𝓕 y) = y)
+    := (constant_reduction : forall y, Int (const y) (PointFamily.has_constants y) = y)
 
 --———————————————————————————————————————————————————————————————————————————————————————--
-/-- For the rest of this section we assume `Y` has a `≤` structure. -/
-variables [has_le Y]
+/- For the rest of this section we assume `Y` has a `≤` structure. -/
+variable [LE Y]
 
 /--
 `pointwise_le` Lifting codomain order to pointwise order.
@@ -226,8 +228,8 @@ variables [has_le Y]
 If `Y` has an order structure `≤` then for any type `X`, the function space `X → Y` has a
 canonical pointwise order. This `instance` is added to simplify the notation below.
 -/
-instance pointwise_le : has_le (X → Y)
-    := ⟨λ f g, (Π x, f x ≤ g x)⟩
+instance pointwise_le : LE (X → Y)
+    := ⟨fun f g => (forall x, f x ≤ g x)⟩
 
 /--
 `MonotonicReduction Y` A reduction which is functorial over `≤`.
@@ -236,15 +238,25 @@ We can also make a reduction functorial over the order structure on the space of
 functions `X → Y` (restricted to `𝓕`) by requiring that `Int` be a monotonic operator.
 -/
 class MonotonicReduction
-    := (monotonicity : Π f g {f𝓕 g𝓕}, (f ≤ g) → (Int f f𝓕 ≤ Int g g𝓕))
+    := (monotonicity : forall f g {f𝓕 g𝓕}, (f ≤ x) → (Int f f𝓕 ≤ Int g g𝓕))
 
 --———————————————————————————————————————————————————————————————————————————————————————--
-/--
+/-
 For the rest of this section we assume `Y` has a zero element and subtraction structure
 and that `𝓕` is a `DifferenceFamily`. We want to consider a reduction that interacts with
 a subtraction structure on its codomain.
 -/
-variables [has_zero Y] [has_sub Y] [DifferenceFamily 𝓕]
+variable [Zero Y] [Sub Y] [DifferenceFamily 𝓕]
+
+-- TODO: Independent def for: (DifferenceFamily.closure f (const k) f𝓕 (PointFamily.has_constants k))
+
+
+/--
+-/
+def constant_difference_property_inclusion
+  := fun f k f𝓕 
+  => @DifferenceFamily.closure _ _ 𝓕 _ _ f (const k) f𝓕 (PointFamily.has_constants k)
+
 
 /--
 `constant_difference_property` A weak homomorphism property.
@@ -256,10 +268,10 @@ the case of classical integration we do not have in general the property
 the subtraction is not well defined. We instead use the weaker property that we can
 commute with subtraction of a constant function, this will be enough for our purposes.
 -/
-definition constant_difference_property
-    := Π f k {f𝓕},
-        Int (f - ↓k) (DifferenceFamily.closure f ↓k f𝓕 (PointFamily.has_constants 𝓕 k))
-      = Int f f𝓕 - Int ↓k (PointFamily.has_constants 𝓕 k)
+def constant_difference_property
+    := forall f k {f𝓕},
+        Int (f - (const k)) (constant_difference_property_inclusion _ f k f𝓕)
+      = Int f f𝓕 - Int (const k) (PointFamily.has_constants k)
 
 /--
 `translation_invariance_property` A weak translation property across inequalities.
@@ -268,8 +280,8 @@ For a reduction compatible with subtraction, we would like to capture the proper
 the classical integral that the integral of a difference `g - f` is in the positive cone,
 then `∫ f ≤ ∫ g`.
 -/
-definition translation_invariance_property
-    := Π f g {f𝓕 g𝓕}, 0 ≤ Int (g - f) (DifferenceFamily.closure g f g𝓕 f𝓕)
+def translation_invariance_property
+    := forall f g {f𝓕 g𝓕}, Zero.zero ≤ Int (g - f) (DifferenceFamily.closure g f g𝓕 f𝓕)
                          → Int f f𝓕 ≤ Int g g𝓕
 
 /--
@@ -286,8 +298,8 @@ end subtraction --————————————————————�
 end reduction --—————————————————————————————————————————————————————————————————————————--
 
 section subdifferential --———————————————————————————————————————————————————————————————--
-variables {Y : Type*} [has_zero Y] [has_sub Y] [has_le Y]
-          (φ : Y → Y) (t : Y) (𝒩 : 𝒫 Y)
+variable {Y : Type _} [Zero Y] [Sub Y] [LE Y]
+          (φ : Y → Y) (t : Y) (𝒩 : Power Y)
 
 /--
 `SubDifferential φ t 𝒩` The subdifferential property.
@@ -312,11 +324,11 @@ we need to restrict the inequality to a specific subset of `Y`. We call this sub
 -/
 structure SubDifferential
     := (map                  : Y → Y)
-       (root_at_zero         : map 0 = 0)
-       (lower_bound_property : Π s, 𝒩 s → map (s - t) ≤ (φ s) - (φ t))
+       (root_at_zero         : map zero = zero)
+       (lower_bound_property : forall s, 𝒩 s → map (s - t) ≤ (φ s) - (φ t))
 
 --———————————————————————————————————————————————————————————————————————————————————————--
-variables {X : Type*} (𝓕 : 𝒫 (X → Y)) (Int : Reduction 𝓕)
+variable {X : Type _} (𝓕 : Power (X → Y)) (Int : Reduction 𝓕)
 
 /--
 `LeftFactorSubDifferential φ t 𝒩` A left factorizable subdifferential.
@@ -331,10 +343,10 @@ structure LeftFactorSubDifferential extends SubDifferential φ t 𝒩
 end subdifferential --———————————————————————————————————————————————————————————————————--
 
 section jensen_inequality --—————————————————————————————————————————————————————————————--
-variables {Y : Type*} [OrderedDifferenceDomain Y]
-          {X : Type*}
-          (𝓕 : 𝒫 (X → Y)) [PointFamily 𝓕] [DifferenceFamily 𝓕]
-          (Int : Reduction 𝓕)
+variable {Y : Type _} [OrderedDifferenceDomain Y]
+         {X : Type _}
+         (𝓕 : Power (X → Y)) [PointFamily 𝓕] [DifferenceFamily 𝓕]
+         (Int : Reduction 𝓕)
 
 /--
 `JensenReduction` A reduction which is strong enough to prove Jensen's Inequality.
@@ -343,7 +355,7 @@ We have the following properties inherited from the individual structures:
   - `UnitalReduction`
       - `∫ ↓t = t`
   - `MonotonicReduction`
-      - `(Π x, f x ≤ g x) → (∫ f ≤ ∫ g)`
+      - `(forall x, f x ≤ g x) → (∫ f ≤ ∫ g)`
   - `TranslativeReduction`
       - `∫ (f - ↓k) = (∫ f) - (∫ ↓k)`
       - `(0 ≤ ∫ (g - f)) → (∫ f ≤ ∫ g)`
@@ -375,7 +387,7 @@ theorem jensen_inequality
     (f : X → Y) (f𝓕 : 𝓕 f)
 
     -- A distinguished superset of the image of f.
-    (𝒩 : 𝒫 Y) (image_contained_in_𝒩 : Π x, 𝒩 (f x))
+    (𝒩 : Power Y) (image_contained_in_𝒩 : forall x, 𝒩 (f x))
 
     -- A function φ which is left closed at f and has a LeftFactorSubDifferential at the
     -- reduction of f with the above distinguished superset 𝒩.
@@ -385,39 +397,37 @@ theorem jensen_inequality
     -- From above, the Jensen Inequality follows:
     : φ (Int f f𝓕) ≤ Int (φ ∘ f) φf𝓕
 
-:= begin -- We begin by introducing some relevant variables:
+:= by -- We begin by introducing some relevant variables:
 
     -- The reduction of f.
-    let t := Int f f𝓕,
+    let t := Int f f𝓕;
 
     -- The function F := λ x, f x - t and its proof of reducibility.
-    let F := f - ↓t,
-    let F𝓕 := DifferenceFamily.closure f ↓t _ _,
-
-    -- The subderivative of φ.
-    let β := subdifferential.map,
-
+    let F := f - (const t);
+    let βF𝓕 := subdifferential.is_left_closed F (constant_difference_property_inclusion _ f t f𝓕);
+    let δ𝓕 := constant_difference_property_inclusion _ (φ ∘ f) (φ t) φf𝓕;
+    
     /-
-    Π s, 𝒩 s → β (s - t) ≤ (φ s) - (φ t)
+    forall s, 𝒩 s → β (s - t) ≤ (φ s) - (φ t)
     —————————————————————————————————————— image_contained_in_𝒩
-       Π x, β (F x) ≤ (φ (f x)) - (φ t)
+       forall x, β (F x) ≤ (φ (f x)) - (φ t)
 
     To begin the proof, we use the fact that the subdifferential has the lower bound
     property inside of 𝒩 which contains the image of f, so we have that the inequality
     holds for all points of X. This is the main term to follow throughout the proof.
     -/
     let inequality
-        := λ x, subdifferential.lower_bound_property (f x) (image_contained_in_𝒩 x),
+        := fun x => subdifferential.lower_bound_property (f x) (image_contained_in_𝒩 x);
 
     /-
-    Π x, β (F x) ≤ (φ (f x)) - (φ t)
+    forall x, β (F x) ≤ (φ (f x)) - (φ t)
     ————————————————————————————————— monotonicity
       ∫ β ∘ F ≤ ∫ (φ ∘ f - ↓(φ t))
 
     Next, we use the fact that the reduction is monotonic to "integrate" both sides.
     -/
     let inequality
-        := MonotonicReduction.monotonicity Int (β ∘ F) (φ ∘ f - ↓(φ t)) inequality,
+        := @MonotonicReduction.monotonicity _ _ _ Int _ _ _ _ _ βF𝓕 δ𝓕 inequality;
 
     /-
     ∫ β ∘ F ≤ ∫ (φ ∘ f - ↓(φ t))
@@ -427,7 +437,7 @@ theorem jensen_inequality
     Here we use the fact that the subdifferential left factors with respect to the
     reduction family.
     -/
-    rewrite subdifferential.left_factors F F𝓕 at inequality,
+    rewrite [subdifferential.left_factors] at inequality;
 
     /-
          β (∫ F) ≤ ∫ (φ ∘ f - ↓(φ t))
@@ -437,7 +447,7 @@ theorem jensen_inequality
     Now we use the fact that our reduction has the constant difference property to
     distribute the reduction over the difference of functions.
     -/
-    rewrite TranslativeReduction.constant_difference Int at inequality,
+    rewrite [@TranslativeReduction.constant_difference _ _ _ Int] at inequality;
 
     /-
     β ((∫ f) - (∫ ↓t)) ≤ ∫ (φ ∘ f - ↓(φ t))
@@ -447,7 +457,7 @@ theorem jensen_inequality
     Since our reduction is unital we can replace the reduction of the constant function
     with the defining constant.
     -/
-    rewrite UnitalReduction.constant_reduction Int at inequality,
+    rewrite [@UnitalReduction.constant_reduction _ _ _ Int] at inequality;
 
     /-
     β ((∫ f) - t) ≤ ∫ (φ ∘ f - ↓(φ t))
@@ -460,7 +470,7 @@ theorem jensen_inequality
         (∫ f) - t := (∫ f) - (∫ f)
     so we can cancel like terms using the fact that Y is a difference domain.
     -/
-    rewrite DifferenceDomain.vanishing_diagonal at inequality,
+    rewrite [DifferenceDomain.vanishing_diagonal] at inequality;
 
     /-
     β 0 ≤ ∫ (φ ∘ f - ↓(φ t))
@@ -470,7 +480,7 @@ theorem jensen_inequality
     To simplify the left hand side of the inequality we use the fact that the
     subderivative has a root at zero.
     -/
-    rewrite subdifferential.root_at_zero at inequality,
+    rewrite [subdifferential.root_at_zero] at inequality;
 
     /-
     0 ≤ ∫ (φ ∘ f - ↓(φ t))
@@ -481,7 +491,7 @@ theorem jensen_inequality
     because our reduction is translative.
     -/
     let inequality
-        := TranslativeReduction.translation_invariance Int ↓(φ t) (φ ∘ f) inequality,
+        := TranslativeReduction.translation_invariance (const (φ t)) (φ ∘ f) inequality;
 
     /-
     ∫ ↓(φ t) ≤ ∫ (φ ∘ f)
@@ -491,7 +501,7 @@ theorem jensen_inequality
     Again we use the fact that out reduction is unital to pull out the constant on the
     left hand side.
     -/
-    rewrite UnitalReduction.constant_reduction Int at inequality,
+    rewrite [@UnitalReduction.constant_reduction _ _ _ Int] at inequality;
 
     /-
       φ t ≤ ∫ (φ ∘ f)
@@ -502,6 +512,6 @@ theorem jensen_inequality
     goal. All other goals can be deduced canonically by the proof assistant since the
     relevant proof terms are in the given context.
     -/
-    exact inequality,
-end --                                                                                    □
+    exact inequality;
+
 end jensen_inequality --—————————————————————————————————————————————————————————————————--
